@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.workoutlogpro.WorkoutLogApp
+import com.workoutlogpro.data.entity.ProteinLog
 import com.workoutlogpro.data.entity.WorkoutLog
 import com.workoutlogpro.data.entity.WorkoutMenu
 import kotlinx.coroutines.flow.*
@@ -18,6 +19,10 @@ class LogViewModel(application: Application) : AndroidViewModel(application) {
 
     val menus: StateFlow<List<WorkoutMenu>> =
         repo.getAllMenus()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val proteinLogs: StateFlow<List<ProteinLog>> =
+        repo.getAllProteinLogs()
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _currentLog = MutableStateFlow(
@@ -43,6 +48,24 @@ class LogViewModel(application: Application) : AndroidViewModel(application) {
     fun deleteLog(log: WorkoutLog) {
         viewModelScope.launch {
             repo.deleteLog(log)
+        }
+    }
+
+    fun saveProteinLog(amount: Float, type: String) {
+        viewModelScope.launch {
+            repo.saveProteinLog(
+                ProteinLog(
+                    date = System.currentTimeMillis(),
+                    amount = amount,
+                    type = type
+                )
+            )
+        }
+    }
+
+    fun deleteProteinLog(log: ProteinLog) {
+        viewModelScope.launch {
+            repo.deleteProteinLog(log)
         }
     }
 }

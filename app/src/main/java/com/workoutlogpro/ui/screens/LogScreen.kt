@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.workoutlogpro.data.entity.ProteinLog
 import com.workoutlogpro.data.entity.WorkoutLog
 import com.workoutlogpro.viewmodel.LogViewModel
 import java.text.SimpleDateFormat
@@ -23,6 +24,7 @@ fun LogScreen(viewModel: LogViewModel) {
     val currentLog by viewModel.currentLog.collectAsState()
     val recentLogs by viewModel.recentLogs.collectAsState()
     val menus by viewModel.menus.collectAsState()
+    val proteinLogs by viewModel.proteinLogs.collectAsState()
 
     var selectedMenuIndex by remember { mutableIntStateOf(-1) }
     var expanded by remember { mutableStateOf(false) }
@@ -193,6 +195,30 @@ fun LogScreen(viewModel: LogViewModel) {
             }
         }
 
+        // Protein input section
+        item {
+            ProteinInputCard(
+                onSave = { amount, type -> viewModel.saveProteinLog(amount, type) }
+            )
+        }
+
+        // Recent protein logs
+        if (proteinLogs.isNotEmpty()) {
+            item {
+                Text(
+                    text = "🥛 最近のプロテイン記録",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            items(proteinLogs.take(10)) { log ->
+                ProteinLogItem(
+                    log = log,
+                    onDelete = { viewModel.deleteProteinLog(log) }
+                )
+            }
+        }
+
         // Recent logs
         item {
             Spacer(modifier = Modifier.height(8.dp))
@@ -243,6 +269,99 @@ fun LogItem(log: WorkoutLog, menuName: String, onDelete: () -> Unit) {
                 Text(
                     text = "疲労度: ${"★".repeat(log.fatigueLevel)}${"☆".repeat(5 - log.fatigueLevel)}",
                     style = MaterialTheme.typography.bodySmall
+                )
+            }
+            IconButton(onClick = onDelete) {
+                Icon(Icons.Filled.Delete, contentDescription = "削除", tint = MaterialTheme.colorScheme.error)
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ProteinInputCard(onSave: (Float, String) -> Unit) {
+    var amount by remember { mutableStateOf("") }
+    var type by remember { mutableStateOf("水") }
+    var saved by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text("🥛 プロテイン記録", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = amount,
+                    onValueChange = { amount = it },
+                    label = { Text("摂取量 (g)") },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f)
+                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("割り方", style = MaterialTheme.typography.bodySmall)
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        FilterChip(
+                            selected = type == "水",
+                            onClick = { type = "水" },
+                            label = { Text("水") }
+                        )
+                        FilterChip(
+                            selected = type == "牛乳",
+                            onClick = { type = "牛乳" },
+                            label = { Text("牛乳") }
+                        )
+                    }
+                }
+            }
+
+            Button(
+                onClick = {
+                    val a = amount.toFloatOrNull()
+                    if (a != null && a > 0f) {
+                        onSave(a, type)
+                        amount = ""
+                        saved = true
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = amount.toFloatOrNull()?.let { it > 0f } ?: false
+            ) {
+                Icon(Icons.Filled.Save, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("プロテイン記録を保存")
+            }
+
+            if (saved) {
+                Text("✅ 保存しました", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodySmall)
+                LaunchedEffect(saved) {
+                    kotlinx.coroutines.delay(2000)
+                    saved = false
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ProteinLogItem(log: ProteinLog, onDelete: () -> Unit) {
+    val dateFormat = remember { SimpleDateFormat("MM/dd HH:mm", Locale.JAPAN) }
+
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "${dateFormat.format(Date(log.date))} - ${log.amount}g (${log.type})",
+                    style = MaterialTheme.typography.bodyMedium
                 )
             }
             IconButton(onClick = onDelete) {
