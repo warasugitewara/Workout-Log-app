@@ -28,15 +28,31 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         repo.getAllReminders()
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val user = repo.getUser()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
     val routineTemplates = RoutineTemplates.all
 
     fun getSchedulesForDay(dayOfWeek: Int): List<WorkoutSchedule> =
         allSchedules.value.filter { it.dayOfWeek == dayOfWeek }
 
+    /** セットモードに応じてスケジュールエントリを作成 */
+    private suspend fun addScheduleEntries(dayOfWeek: Int, menuId: Int) {
+        val mode = user.value?.setTrackingMode ?: "together"
+        val menu = allMenus.value.find { it.id == menuId }
+        if (mode == "per_set" && menu != null && menu.defaultSets > 1) {
+            for (setNum in 1..menu.defaultSets) {
+                repo.saveSchedule(WorkoutSchedule(dayOfWeek = dayOfWeek, menuId = menuId, setNumber = setNum))
+            }
+        } else {
+            repo.saveSchedule(WorkoutSchedule(dayOfWeek = dayOfWeek, menuId = menuId, setNumber = 0))
+        }
+    }
+
     /** 個別メニューをスケジュールに追加 */
     fun addMenuToDay(dayOfWeek: Int, menuId: Int) {
         viewModelScope.launch {
-            repo.saveSchedule(WorkoutSchedule(dayOfWeek = dayOfWeek, menuId = menuId))
+            addScheduleEntries(dayOfWeek, menuId)
         }
     }
 
@@ -50,14 +66,12 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
     /** ルーティンテンプレートを指定曜日に一括登録 */
     fun applyRoutineToDay(dayOfWeek: Int, menuNames: List<String>) {
         viewModelScope.launch {
-            // 既存スケジュールをクリア
             repo.deleteSchedulesByDay(dayOfWeek)
-            // メニュー名からIDを逆引きして登録
             val menus = allMenus.value
             menuNames.forEach { name ->
                 val menu = menus.find { it.name == name }
                 if (menu != null) {
-                    repo.saveSchedule(WorkoutSchedule(dayOfWeek = dayOfWeek, menuId = menu.id))
+                    addScheduleEntries(dayOfWeek, menu.id)
                 }
             }
         }
@@ -78,7 +92,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
                 val daySchedules = allSchedules.value.filter { it.dayOfWeek == dayOfWeek }
                 val menuNames = daySchedules.mapNotNull { s ->
                     allMenus.value.find { it.id == s.menuId }?.name
-                }
+                }.distinct()
                 val summary = if (menuNames.isNotEmpty()) menuNames.joinToString("・") else "トレーニング"
                 ReminderWorker.scheduleReminder(app, dayOfWeek, hour, minute, summary)
             } else {

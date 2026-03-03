@@ -11,7 +11,8 @@ data class User(
     val weight: Float = 0f,
     val targetWeight: Float = 0f,
     val gender: String = "",
-    val birthDate: Long = 0L // epoch millis
+    val birthDate: Long = 0L, // epoch millis
+    val setTrackingMode: String = "together" // "together" = まとめて1チェック, "per_set" = 1セット毎
 ) {
     /** BMI = 体重(kg) / 身長(m)^2 */
     fun calcBmi(): Float {

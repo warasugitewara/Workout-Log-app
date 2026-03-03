@@ -20,6 +20,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
     var weight by remember(user) { mutableStateOf(user?.weight?.toString() ?: "") }
     var targetWeight by remember(user) { mutableStateOf(user?.targetWeight?.toString() ?: "") }
     var gender by remember(user) { mutableStateOf(user?.gender ?: "male") }
+    var setTrackingMode by remember(user) { mutableStateOf(user?.setTrackingMode ?: "together") }
     var birthYear by remember(user) {
         mutableStateOf(
             if (user != null && user!!.birthDate > 0) {
@@ -156,6 +157,28 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
 
                 Spacer(modifier = Modifier.height(8.dp))
 
+                // セットトラッキングモード
+                Text("セット管理方式", style = MaterialTheme.typography.bodyMedium)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = setTrackingMode == "together",
+                        onClick = { setTrackingMode = "together" },
+                        label = { Text("まとめて1チェック") },
+                        modifier = Modifier.weight(1f)
+                    )
+                    FilterChip(
+                        selected = setTrackingMode == "per_set",
+                        onClick = { setTrackingMode = "per_set" },
+                        label = { Text("1セット毎") },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
                 Button(
                     onClick = {
                         val birthDate = try {
@@ -175,7 +198,8 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                                 weight = weight.toFloatOrNull() ?: 0f,
                                 targetWeight = targetWeight.toFloatOrNull() ?: 0f,
                                 gender = gender,
-                                birthDate = birthDate
+                                birthDate = birthDate,
+                                setTrackingMode = setTrackingMode
                             )
                         )
                         saved = true

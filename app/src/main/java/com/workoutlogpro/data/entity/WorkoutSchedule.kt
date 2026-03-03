@@ -22,5 +22,6 @@ data class WorkoutSchedule(
     val id: Int = 0,
     val dayOfWeek: Int = 0, // 1=Mon ... 7=Sun
     val menuId: Int = 0,
-    val isCompleted: Boolean = false
+    val isCompleted: Boolean = false,
+    val setNumber: Int = 0 // 0=まとめて, 1〜N=セット番号
 )
