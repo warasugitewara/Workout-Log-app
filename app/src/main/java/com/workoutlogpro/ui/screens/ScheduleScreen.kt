@@ -1,6 +1,5 @@
 package com.workoutlogpro.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -234,7 +233,6 @@ fun ScheduleScreen(viewModel: ScheduleViewModel, onBack: () -> Unit) {
                 items(daySchedules) { schedule ->
                     val menu = allMenus.find { it.id == schedule.menuId }
                     if (menu != null) {
-                        val setLabel = if (schedule.setNumber > 0) " (セット${schedule.setNumber})" else ""
                         Card(modifier = Modifier.fillMaxWidth()) {
                             Row(
                                 modifier = Modifier
@@ -243,14 +241,14 @@ fun ScheduleScreen(viewModel: ScheduleViewModel, onBack: () -> Unit) {
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(menu.name + setLabel, fontWeight = FontWeight.Bold)
-                                    val detail = if (schedule.setNumber > 0) {
-                                        "${menu.category} | ${menu.defaultReps}回 | ${"%.1f".format(menu.calorieEstimate / menu.defaultSets.coerceAtLeast(1))}kcal"
+                                    val title = if (schedule.setNumber > 0) {
+                                        "${menu.name} (セット${schedule.setNumber})"
                                     } else {
-                                        "${menu.category} | ${menu.defaultReps}回×${menu.defaultSets}セット | ${menu.calorieEstimate}kcal"
+                                        menu.name
                                     }
+                                    Text(title, fontWeight = FontWeight.Bold)
                                     Text(
-                                        detail,
+                                        "${menu.category} | ${menu.defaultReps}回 | ${if (schedule.setNumber > 0) "%.1f".format(menu.calorieEstimate / menu.defaultSets.coerceAtLeast(1)) else menu.calorieEstimate}kcal",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -268,8 +266,6 @@ fun ScheduleScreen(viewModel: ScheduleViewModel, onBack: () -> Unit) {
         }
     }
 }
-
-// ── Dialogs ──
 
 @Composable
 fun RoutineSelectDialog(

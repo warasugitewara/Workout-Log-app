@@ -33,13 +33,14 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
 
     val routineTemplates = RoutineTemplates.all
 
-    fun getSchedulesForDay(dayOfWeek: Int): List<WorkoutSchedule> =
-        allSchedules.value.filter { it.dayOfWeek == dayOfWeek }
-
     /** セットモードに応じてスケジュールエントリを作成 */
     private suspend fun addScheduleEntries(dayOfWeek: Int, menuId: Int) {
-        val mode = user.value?.setTrackingMode ?: "together"
-        val menu = allMenus.value.find { it.id == menuId }
+        // user.value が null の場合のデフォルトを per_set にするか、確実に取得する
+        val currentUser = repo.getUser().first()
+        val mode = currentUser?.setTrackingMode ?: "per_set"
+        val menus = repo.getAllMenus().first()
+        val menu = menus.find { it.id == menuId }
+        
         if (mode == "per_set" && menu != null && menu.defaultSets > 1) {
             for (setNum in 1..menu.defaultSets) {
                 repo.saveSchedule(WorkoutSchedule(dayOfWeek = dayOfWeek, menuId = menuId, setNumber = setNum))
@@ -49,25 +50,22 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    /** 個別メニューをスケジュールに追加 */
     fun addMenuToDay(dayOfWeek: Int, menuId: Int) {
         viewModelScope.launch {
             addScheduleEntries(dayOfWeek, menuId)
         }
     }
 
-    /** スケジュールからメニューを削除 */
     fun removeSchedule(schedule: WorkoutSchedule) {
         viewModelScope.launch {
             repo.deleteSchedule(schedule)
         }
     }
 
-    /** ルーティンテンプレートを指定曜日に一括登録 */
     fun applyRoutineToDay(dayOfWeek: Int, menuNames: List<String>) {
         viewModelScope.launch {
             repo.deleteSchedulesByDay(dayOfWeek)
-            val menus = allMenus.value
+            val menus = repo.getAllMenus().first()
             menuNames.forEach { name ->
                 val menu = menus.find { it.name == name }
                 if (menu != null) {
@@ -77,14 +75,12 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    /** 曜日のスケジュールをすべてクリア */
     fun clearDay(dayOfWeek: Int) {
         viewModelScope.launch {
             repo.deleteSchedulesByDay(dayOfWeek)
         }
     }
 
-    /** リマインド設定を保存 + WorkManager に登録 */
     fun saveReminder(dayOfWeek: Int, hour: Int, minute: Int, isEnabled: Boolean) {
         viewModelScope.launch {
             repo.saveReminder(ReminderSetting(dayOfWeek, hour, minute, isEnabled))

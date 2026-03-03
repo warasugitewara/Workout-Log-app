@@ -1,19 +1,24 @@
 package com.workoutlogpro.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.workoutlogpro.data.entity.WorkoutMenu
 import com.workoutlogpro.ui.theme.*
 import com.workoutlogpro.viewmodel.MenuViewModel
@@ -24,7 +29,7 @@ fun MenuScreen(viewModel: MenuViewModel) {
     val editingMenu by viewModel.editingMenu.collectAsState()
     var showTemplateDialog by remember { mutableStateOf(false) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         if (editingMenu != null) {
             MenuEditDialog(
                 menu = editingMenu!!,
@@ -41,35 +46,48 @@ fun MenuScreen(viewModel: MenuViewModel) {
         }
 
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.Bottom
                 ) {
-                    Text(
-                        text = "🏋️ メニュー管理",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    FloatingActionButton(
-                        onClick = { showTemplateDialog = true },
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        Text("📋", style = MaterialTheme.typography.bodyLarge)
+                    Column {
+                        Text(
+                            text = "My Library",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "メニュー管理",
+                            style = MaterialTheme.typography.headlineLarge.copy(
+                                fontWeight = FontWeight.Black,
+                                letterSpacing = (-1).sp
+                            )
+                        )
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    FloatingActionButton(
-                        onClick = { viewModel.startEdit(null) },
-                        containerColor = MaterialTheme.colorScheme.primary
-                    ) {
-                        Icon(Icons.Filled.Add, contentDescription = "追加")
+                    
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilledTonalIconButton(
+                            onClick = { showTemplateDialog = true },
+                            modifier = Modifier.size(48.dp),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Icon(Icons.Filled.AutoAwesome, contentDescription = "テンプレート")
+                        }
+                        FloatingActionButton(
+                            onClick = { viewModel.startEdit(null) },
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = Color.White,
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.size(48.dp)
+                        ) {
+                            Icon(Icons.Filled.Add, contentDescription = "追加")
+                        }
                     }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
@@ -77,50 +95,67 @@ fun MenuScreen(viewModel: MenuViewModel) {
 
             if (menus.isEmpty()) {
                 item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(24.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Text(
-                                text = "メニューがまだ登録されていません。",
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                            Button(
-                                onClick = { showTemplateDialog = true },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text("📋 テンプレートから追加")
-                            }
-                            OutlinedButton(
-                                onClick = { viewModel.startEdit(null) },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text("＋ 手動で追加")
-                            }
-                        }
-                    }
+                    EmptyMenuState(onTemplateClick = { showTemplateDialog = true })
                 }
             }
 
             items(menus) { menu ->
-                MenuCard(
+                ModernMenuCard(
                     menu = menu,
                     onEdit = { viewModel.startEdit(menu) },
                     onDelete = { viewModel.deleteMenu(menu) }
                 )
+            }
+            
+            item { Spacer(modifier = Modifier.height(80.dp)) }
+        }
+    }
+}
+
+@Composable
+fun EmptyMenuState(onTemplateClick: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(32.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+    ) {
+        Column(
+            modifier = Modifier.padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                Icons.Filled.FitnessCenter, 
+                contentDescription = null, 
+                modifier = Modifier.size(64.dp),
+                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "ライブラリが空です",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "テンプレートから人気のメニューを\n追加してみませんか？",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            Button(
+                onClick = onTemplateClick,
+                shape = RoundedCornerShape(12.dp),
+                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
+            ) {
+                Text("テンプレートを見る")
             }
         }
     }
 }
 
 @Composable
-fun MenuCard(menu: WorkoutMenu, onEdit: () -> Unit, onDelete: () -> Unit) {
+fun ModernMenuCard(menu: WorkoutMenu, onEdit: () -> Unit, onDelete: () -> Unit) {
     val categoryColor = when (menu.category) {
         "上半身" -> CategoryUpper
         "下半身" -> CategoryLower
@@ -130,57 +165,88 @@ fun MenuCard(menu: WorkoutMenu, onEdit: () -> Unit, onDelete: () -> Unit) {
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(20.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.Top
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = menu.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
                     Surface(
-                        color = categoryColor.copy(alpha = 0.2f),
-                        shape = MaterialTheme.shapes.small
+                        color = categoryColor.copy(alpha = 0.1f),
+                        shape = CircleShape
                     ) {
                         Text(
                             text = menu.category,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                             style = MaterialTheme.typography.labelSmall,
-                            color = categoryColor
+                            color = categoryColor,
+                            fontWeight = FontWeight.Bold
                         )
                     }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = menu.name,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
                 Row {
                     IconButton(onClick = onEdit) {
-                        Icon(Icons.Filled.Edit, contentDescription = "編集")
+                        Icon(Icons.Filled.Edit, contentDescription = "編集", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     IconButton(onClick = onDelete) {
-                        Icon(Icons.Filled.Delete, contentDescription = "削除", tint = MaterialTheme.colorScheme.error)
+                        Icon(Icons.Filled.DeleteOutline, contentDescription = "削除", tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f))
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text("${menu.defaultReps}回", style = MaterialTheme.typography.bodyMedium)
-                Text("${menu.defaultSets}セット", style = MaterialTheme.typography.bodyMedium)
-                Text("${menu.avgTimeSec}秒/セット", style = MaterialTheme.typography.bodyMedium)
-                Text("${menu.calorieEstimate} kcal", style = MaterialTheme.typography.bodyMedium)
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                MenuStatBadge(value = "${menu.defaultReps}", label = "Reps")
+                MenuStatBadge(value = "${menu.defaultSets}", label = "Sets")
+                MenuStatBadge(value = "${menu.calorieEstimate.toInt()}", label = "kcal")
             }
+            
             if (menu.memo.isNotBlank()) {
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = menu.memo,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                        .padding(12.dp)
+                ) {
+                    Text(
+                        text = menu.memo,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
+    }
+}
+
+@Composable
+fun MenuStatBadge(value: String, label: String) {
+    Column(
+        modifier = Modifier
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(text = value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black)
+        Text(text = label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -200,112 +266,126 @@ fun MenuEditDialog(menu: WorkoutMenu, onSave: (WorkoutMenu) -> Unit, onDismiss: 
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (menu.id == 0) "メニュー追加" else "メニュー編集") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("メニュー名") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                ExposedDropdownMenuBox(
-                    expanded = expanded,
-                    onExpandedChange = { expanded = !expanded }
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+        modifier = Modifier.padding(24.dp),
+        content = {
+            Surface(
+                shape = RoundedCornerShape(28.dp),
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 6.dp
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    OutlinedTextField(
-                        value = category,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("種類") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-                        modifier = Modifier
-                            .menuAnchor()
-                            .fillMaxWidth()
+                    Text(
+                        text = if (menu.id == 0) "新規メニュー" else "メニューを編集",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
                     )
-                    ExposedDropdownMenu(
+
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = { Text("メニュー名") },
+                        placeholder = { Text("例: ベンチプレス") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    ExposedDropdownMenuBox(
                         expanded = expanded,
-                        onDismissRequest = { expanded = false }
+                        onExpandedChange = { expanded = !expanded }
                     ) {
-                        categories.forEach { cat ->
-                            DropdownMenuItem(
-                                text = { Text(cat) },
-                                onClick = {
-                                    category = cat
-                                    expanded = false
-                                }
-                            )
+                        OutlinedTextField(
+                            value = category,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("カテゴリー") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+                            modifier = Modifier.menuAnchor().fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        ExposedDropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
+                        ) {
+                            categories.forEach { cat ->
+                                DropdownMenuItem(
+                                    text = { Text(cat) },
+                                    onClick = {
+                                        category = cat
+                                        expanded = false
+                                    }
+                                )
+                            }
                         }
                     }
-                }
 
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = reps,
-                        onValueChange = { reps = it },
-                        label = { Text("回数") },
-                        singleLine = true,
-                        modifier = Modifier.weight(1f)
-                    )
-                    OutlinedTextField(
-                        value = sets,
-                        onValueChange = { sets = it },
-                        label = { Text("セット") },
-                        singleLine = true,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        OutlinedTextField(
+                            value = reps,
+                            onValueChange = { reps = it },
+                            label = { Text("回数") },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        OutlinedTextField(
+                            value = sets,
+                            onValueChange = { sets = it },
+                            label = { Text("セット") },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                    }
 
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = avgTime,
-                        onValueChange = { avgTime = it },
-                        label = { Text("秒/セット") },
-                        singleLine = true,
-                        modifier = Modifier.weight(1f)
-                    )
                     OutlinedTextField(
                         value = calories,
                         onValueChange = { calories = it },
-                        label = { Text("kcal") },
-                        singleLine = true,
-                        modifier = Modifier.weight(1f)
+                        label = { Text("消費カロリー (目安)") },
+                        trailingIcon = { Text("kcal", modifier = Modifier.padding(end = 12.dp)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
                     )
-                }
 
-                OutlinedTextField(
-                    value = memo,
-                    onValueChange = { memo = it },
-                    label = { Text("メモ") },
-                    modifier = Modifier.fillMaxWidth(),
-                    maxLines = 3
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    onSave(
-                        menu.copy(
-                            name = name,
-                            category = category,
-                            defaultReps = reps.toIntOrNull() ?: 0,
-                            defaultSets = sets.toIntOrNull() ?: 0,
-                            avgTimeSec = avgTime.toIntOrNull() ?: 0,
-                            calorieEstimate = calories.toFloatOrNull() ?: 0f,
-                            memo = memo
-                        )
+                    OutlinedTextField(
+                        value = memo,
+                        onValueChange = { memo = it },
+                        label = { Text("メモ") },
+                        modifier = Modifier.fillMaxWidth(),
+                        maxLines = 3,
+                        shape = RoundedCornerShape(12.dp)
                     )
-                },
-                enabled = name.isNotBlank()
-            ) {
-                Text("保存")
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TextButton(onClick = onDismiss) { Text("キャンセル") }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(
+                            onClick = {
+                                onSave(
+                                    menu.copy(
+                                        name = name,
+                                        category = category,
+                                        defaultReps = reps.toIntOrNull() ?: 0,
+                                        defaultSets = sets.toIntOrNull() ?: 0,
+                                        avgTimeSec = avgTime.toIntOrNull() ?: 0,
+                                        calorieEstimate = calories.toFloatOrNull() ?: 0f,
+                                        memo = memo
+                                    )
+                                )
+                            },
+                            enabled = name.isNotBlank(),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text("保存する")
+                        }
+                    }
+                }
             }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("キャンセル") }
         }
     )
 }
@@ -316,7 +396,6 @@ fun TemplateDialog(viewModel: MenuViewModel, onDismiss: () -> Unit) {
     val selectedItems = remember { mutableStateMapOf<String, Boolean>() }
     var selectAll by remember { mutableStateOf(true) }
 
-    // Initialize all as selected
     LaunchedEffect(Unit) {
         com.workoutlogpro.data.MenuTemplates.all.forEach {
             selectedItems[it.name] = true
@@ -325,13 +404,12 @@ fun TemplateDialog(viewModel: MenuViewModel, onDismiss: () -> Unit) {
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("📋 テンプレートから追加") },
+        title = { Text("📋 テンプレート", fontWeight = FontWeight.Bold) },
         text = {
             LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.heightIn(max = 400.dp)
             ) {
-                // Select all toggle
                 item {
                     Row(
                         modifier = Modifier
@@ -343,14 +421,14 @@ fun TemplateDialog(viewModel: MenuViewModel, onDismiss: () -> Unit) {
                                     selectedItems.keys.forEach { selectedItems[it] = checked }
                                 }
                             )
-                            .padding(vertical = 4.dp),
+                            .padding(vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Checkbox(checked = selectAll, onCheckedChange = null)
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
                         Text("すべて選択", fontWeight = FontWeight.Bold)
                     }
-                    Divider()
+                    Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 }
 
                 categories.forEach { category ->
@@ -358,22 +436,16 @@ fun TemplateDialog(viewModel: MenuViewModel, onDismiss: () -> Unit) {
                         Text(
                             text = category,
                             style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = when (category) {
-                                "上半身" -> CategoryUpper
-                                "下半身" -> CategoryLower
-                                "有酸素" -> CategoryCardio
-                                "体幹" -> CategoryCore
-                                else -> MaterialTheme.colorScheme.primary
-                            },
-                            modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                            fontWeight = FontWeight.ExtraBold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
                         )
                     }
 
                     val templates = viewModel.getTemplatesByCategory(category)
                     items(templates) { template ->
                         val isSelected = selectedItems[template.name] ?: true
-                        Row(
+                        Card(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .toggleable(
@@ -382,19 +454,28 @@ fun TemplateDialog(viewModel: MenuViewModel, onDismiss: () -> Unit) {
                                         selectedItems[template.name] = checked
                                         selectAll = selectedItems.values.all { it }
                                     }
-                                )
-                                .padding(vertical = 2.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                                ),
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) 
+                                else MaterialTheme.colorScheme.surface
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            border = if (isSelected) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)) else null
                         ) {
-                            Checkbox(checked = isSelected, onCheckedChange = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Column {
-                                Text(template.name, style = MaterialTheme.typography.bodyMedium)
-                                Text(
-                                    "${template.defaultReps}回×${template.defaultSets}セット | ${template.calorieEstimate}kcal",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Checkbox(checked = isSelected, onCheckedChange = null)
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text(template.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                                    Text(
+                                        "${template.defaultReps}回 × ${template.defaultSets}セット",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
                         }
                     }
@@ -402,15 +483,16 @@ fun TemplateDialog(viewModel: MenuViewModel, onDismiss: () -> Unit) {
             }
         },
         confirmButton = {
-            TextButton(
+            Button(
                 onClick = {
                     val selected = com.workoutlogpro.data.MenuTemplates.all
                         .filter { selectedItems[it.name] == true }
                     viewModel.loadTemplates(selected)
                     onDismiss()
-                }
+                },
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Text("追加")
+                Text("ライブラリに追加")
             }
         },
         dismissButton = {
