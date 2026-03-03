@@ -15,6 +15,7 @@ import com.workoutlogpro.viewmodel.SettingsViewModel
 @Composable
 fun SettingsScreen(viewModel: SettingsViewModel) {
     val user by viewModel.user.collectAsState()
+    val exportStatus by viewModel.exportStatus.collectAsState()
 
     var height by remember(user) { mutableStateOf(user?.height?.toString() ?: "") }
     var weight by remember(user) { mutableStateOf(user?.weight?.toString() ?: "") }
@@ -249,6 +250,33 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                         }
                         SummaryRow("推定基礎代謝量", "%.0f kcal/日".format(bmr))
                     }
+                }
+            }
+        }
+
+        // Data export section
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer
+            )
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("データ管理", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = { viewModel.exportCsv() },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("📤 CSVエクスポート")
+                }
+                if (exportStatus.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = exportStatus,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                    )
                 }
             }
         }
