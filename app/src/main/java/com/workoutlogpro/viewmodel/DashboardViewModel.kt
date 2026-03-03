@@ -73,12 +73,12 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             monthStart.set(Calendar.MINUTE, 0)
             monthStart.set(Calendar.SECOND, 0)
 
-            // Weekly completion rate
-            val weeklyLogs = repo.countLogsForPeriod(weekStart.timeInMillis, cal.timeInMillis)
-            val scheduledCount = 7 // simplified: assume max 7 sessions per week
-            _weeklyCompletionRate.value = if (scheduledCount > 0) {
-                (weeklyLogs.toFloat() / scheduledCount * 100f).coerceAtMost(100f)
-            } else 0f
+            // Weekly completion rate (based on actual schedules)
+            repo.getAllSchedules().first().let { schedules ->
+                val scheduledCount = schedules.size.coerceAtLeast(1)
+                val weeklyLogs = repo.countLogsForPeriod(weekStart.timeInMillis, cal.timeInMillis)
+                _weeklyCompletionRate.value = (weeklyLogs.toFloat() / scheduledCount * 100f).coerceAtMost(100f)
+            }
 
             // Monthly calories
             repo.getLogsByDateRange(monthStart.timeInMillis, cal.timeInMillis)

@@ -3,6 +3,7 @@ package com.workoutlogpro.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -21,6 +22,7 @@ import com.workoutlogpro.viewmodel.MenuViewModel
 fun MenuScreen(viewModel: MenuViewModel) {
     val menus by viewModel.menus.collectAsState()
     val editingMenu by viewModel.editingMenu.collectAsState()
+    var showTemplateDialog by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         if (editingMenu != null) {
@@ -28,6 +30,13 @@ fun MenuScreen(viewModel: MenuViewModel) {
                 menu = editingMenu!!,
                 onSave = { viewModel.saveMenu(it) },
                 onDismiss = { viewModel.clearEdit() }
+            )
+        }
+
+        if (showTemplateDialog) {
+            TemplateDialog(
+                viewModel = viewModel,
+                onDismiss = { showTemplateDialog = false }
             )
         }
 
@@ -49,6 +58,14 @@ fun MenuScreen(viewModel: MenuViewModel) {
                         fontWeight = FontWeight.Bold
                     )
                     FloatingActionButton(
+                        onClick = { showTemplateDialog = true },
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Text("📋", style = MaterialTheme.typography.bodyLarge)
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    FloatingActionButton(
                         onClick = { viewModel.startEdit(null) },
                         containerColor = MaterialTheme.colorScheme.primary
                     ) {
@@ -66,11 +83,27 @@ fun MenuScreen(viewModel: MenuViewModel) {
                             containerColor = MaterialTheme.colorScheme.surfaceVariant
                         )
                     ) {
-                        Text(
-                            text = "メニューがまだ登録されていません。\n＋ボタンから追加しましょう！",
+                        Column(
                             modifier = Modifier.padding(24.dp),
-                            style = MaterialTheme.typography.bodyLarge
-                        )
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Text(
+                                text = "メニューがまだ登録されていません。",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            Button(
+                                onClick = { showTemplateDialog = true },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("📋 テンプレートから追加")
+                            }
+                            OutlinedButton(
+                                onClick = { viewModel.startEdit(null) },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("＋ 手動で追加")
+                            }
+                        }
                     }
                 }
             }
@@ -269,6 +302,115 @@ fun MenuEditDialog(menu: WorkoutMenu, onSave: (WorkoutMenu) -> Unit, onDismiss: 
                 enabled = name.isNotBlank()
             ) {
                 Text("保存")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("キャンセル") }
+        }
+    )
+}
+
+@Composable
+fun TemplateDialog(viewModel: MenuViewModel, onDismiss: () -> Unit) {
+    val categories = viewModel.templateCategories
+    val selectedItems = remember { mutableStateMapOf<String, Boolean>() }
+    var selectAll by remember { mutableStateOf(true) }
+
+    // Initialize all as selected
+    LaunchedEffect(Unit) {
+        com.workoutlogpro.data.MenuTemplates.all.forEach {
+            selectedItems[it.name] = true
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("📋 テンプレートから追加") },
+        text = {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.heightIn(max = 400.dp)
+            ) {
+                // Select all toggle
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .toggleable(
+                                value = selectAll,
+                                onValueChange = { checked ->
+                                    selectAll = checked
+                                    selectedItems.keys.forEach { selectedItems[it] = checked }
+                                }
+                            )
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(checked = selectAll, onCheckedChange = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("すべて選択", fontWeight = FontWeight.Bold)
+                    }
+                    HorizontalDivider()
+                }
+
+                categories.forEach { category ->
+                    item {
+                        Text(
+                            text = category,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = when (category) {
+                                "上半身" -> CategoryUpper
+                                "下半身" -> CategoryLower
+                                "有酸素" -> CategoryCardio
+                                "体幹" -> CategoryCore
+                                else -> MaterialTheme.colorScheme.primary
+                            },
+                            modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                        )
+                    }
+
+                    val templates = viewModel.getTemplatesByCategory(category)
+                    items(templates) { template ->
+                        val isSelected = selectedItems[template.name] ?: true
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .toggleable(
+                                    value = isSelected,
+                                    onValueChange = { checked ->
+                                        selectedItems[template.name] = checked
+                                        selectAll = selectedItems.values.all { it }
+                                    }
+                                )
+                                .padding(vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(checked = isSelected, onCheckedChange = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column {
+                                Text(template.name, style = MaterialTheme.typography.bodyMedium)
+                                Text(
+                                    "${template.defaultReps}回×${template.defaultSets}セット | ${template.calorieEstimate}kcal",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val selected = com.workoutlogpro.data.MenuTemplates.all
+                        .filter { selectedItems[it.name] == true }
+                    viewModel.loadTemplates(selected)
+                    onDismiss()
+                }
+            ) {
+                Text("追加")
             }
         },
         dismissButton = {

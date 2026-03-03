@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.workoutlogpro.WorkoutLogApp
+import com.workoutlogpro.data.MenuTemplates
 import com.workoutlogpro.data.entity.WorkoutMenu
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -17,6 +18,27 @@ class MenuViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _editingMenu = MutableStateFlow<WorkoutMenu?>(null)
     val editingMenu: StateFlow<WorkoutMenu?> = _editingMenu
+
+    /** テンプレートのカテゴリ一覧 */
+    val templateCategories: List<String> =
+        MenuTemplates.all.map { it.category }.distinct()
+
+    fun getTemplatesByCategory(category: String): List<WorkoutMenu> =
+        MenuTemplates.all.filter { it.category == category }
+
+    /** 選択したテンプレートを一括登録 */
+    fun loadTemplates(templates: List<WorkoutMenu>) {
+        viewModelScope.launch {
+            templates.forEach { repo.saveMenu(it) }
+        }
+    }
+
+    /** 全テンプレートを一括登録 */
+    fun loadAllTemplates() {
+        viewModelScope.launch {
+            MenuTemplates.all.forEach { repo.saveMenu(it) }
+        }
+    }
 
     fun startEdit(menu: WorkoutMenu?) {
         _editingMenu.value = menu ?: WorkoutMenu()
