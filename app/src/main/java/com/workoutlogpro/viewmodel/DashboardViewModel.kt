@@ -99,19 +99,24 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             if (completed) {
                 val schedule = todaySchedules.value.find { it.id == id } ?: return@launch
                 val menu = allMenus.value.find { it.id == schedule.menuId } ?: return@launch
+                val isPerSet = schedule.setNumber > 0
                 repo.saveLog(
                     WorkoutLog(
                         date = System.currentTimeMillis(),
                         menuId = menu.id,
                         actualReps = menu.defaultReps,
-                        actualSets = menu.defaultSets,
-                        durationSec = menu.avgTimeSec * menu.defaultSets,
-                        actualCalories = menu.calorieEstimate,
+                        actualSets = if (isPerSet) 1 else menu.defaultSets,
+                        durationSec = if (isPerSet) menu.avgTimeSec else menu.avgTimeSec * menu.defaultSets,
+                        actualCalories = if (isPerSet) {
+                            menu.calorieEstimate / menu.defaultSets.coerceAtLeast(1)
+                        } else {
+                            menu.calorieEstimate
+                        },
                         weight = user.value?.weight ?: 0f,
                         fatigueLevel = 3
                     )
                 )
-                loadStats() // 統計を再読み込み
+                loadStats()
             }
         }
     }

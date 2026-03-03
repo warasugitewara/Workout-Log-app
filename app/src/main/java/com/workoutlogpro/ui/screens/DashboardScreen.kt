@@ -150,7 +150,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, onNavigateToSchedule: () -> U
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         LinearProgressIndicator(
-                            progress = { completedCount.toFloat() / totalCount.coerceAtLeast(1) },
+                            progress = completedCount.toFloat() / totalCount.coerceAtLeast(1),
                             modifier = Modifier.fillMaxWidth().height(8.dp),
                             color = MaterialTheme.colorScheme.primary,
                             trackColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -184,9 +184,18 @@ fun DashboardScreen(viewModel: DashboardViewModel, onNavigateToSchedule: () -> U
             items(todaySchedules) { schedule ->
                 val menu = allMenus.find { it.id == schedule.menuId }
                 val menuName = menu?.name ?: "不明"
-                val detail = menu?.let { "${it.defaultReps}回×${it.defaultSets}セット | ${it.calorieEstimate}kcal" } ?: ""
+                val setLabel = if (schedule.setNumber > 0) {
+                    " (セット${schedule.setNumber})"
+                } else ""
+                val detail = menu?.let {
+                    if (schedule.setNumber > 0) {
+                        "${it.defaultReps}回 | ${"%.1f".format(it.calorieEstimate / it.defaultSets.coerceAtLeast(1))}kcal"
+                    } else {
+                        "${it.defaultReps}回×${it.defaultSets}セット | ${it.calorieEstimate}kcal"
+                    }
+                } ?: ""
                 ScheduleItem(
-                    menuName = menuName,
+                    menuName = menuName + setLabel,
                     detail = detail,
                     category = menu?.category ?: "",
                     isCompleted = schedule.isCompleted,

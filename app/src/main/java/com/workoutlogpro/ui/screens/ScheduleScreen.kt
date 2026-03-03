@@ -234,6 +234,7 @@ fun ScheduleScreen(viewModel: ScheduleViewModel, onBack: () -> Unit) {
                 items(daySchedules) { schedule ->
                     val menu = allMenus.find { it.id == schedule.menuId }
                     if (menu != null) {
+                        val setLabel = if (schedule.setNumber > 0) " (セット${schedule.setNumber})" else ""
                         Card(modifier = Modifier.fillMaxWidth()) {
                             Row(
                                 modifier = Modifier
@@ -242,9 +243,14 @@ fun ScheduleScreen(viewModel: ScheduleViewModel, onBack: () -> Unit) {
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(menu.name, fontWeight = FontWeight.Bold)
+                                    Text(menu.name + setLabel, fontWeight = FontWeight.Bold)
+                                    val detail = if (schedule.setNumber > 0) {
+                                        "${menu.category} | ${menu.defaultReps}回 | ${"%.1f".format(menu.calorieEstimate / menu.defaultSets.coerceAtLeast(1))}kcal"
+                                    } else {
+                                        "${menu.category} | ${menu.defaultReps}回×${menu.defaultSets}セット | ${menu.calorieEstimate}kcal"
+                                    }
                                     Text(
-                                        "${menu.category} | ${menu.defaultReps}回×${menu.defaultSets}セット | ${menu.calorieEstimate}kcal",
+                                        detail,
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
