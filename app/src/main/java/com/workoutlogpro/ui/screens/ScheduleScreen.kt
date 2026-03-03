@@ -357,6 +357,7 @@ fun MenuSelectDialog(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReminderTimeDialog(
     currentHour: Int,

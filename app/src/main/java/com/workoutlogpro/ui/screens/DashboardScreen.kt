@@ -135,7 +135,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, onNavigateToSchedule: () -> U
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                         LinearProgressIndicator(
-                            progress = { completedCount.toFloat() / totalCount.coerceAtLeast(1) },
+                            progress = completedCount.toFloat() / totalCount.coerceAtLeast(1),
                             modifier = Modifier.fillMaxWidth().height(8.dp),
                             color = MaterialTheme.colorScheme.primary,
                             trackColor = MaterialTheme.colorScheme.surfaceVariant,
