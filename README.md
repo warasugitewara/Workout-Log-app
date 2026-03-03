@@ -1,4 +1,4 @@
-# Workout Log Pro
+# Workout Log App
 
 筋トレ管理Androidアプリ
 
