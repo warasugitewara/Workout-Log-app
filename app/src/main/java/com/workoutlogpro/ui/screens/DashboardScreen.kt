@@ -3,22 +3,28 @@ package com.workoutlogpro.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.workoutlogpro.viewmodel.DashboardViewModel
 
 @Composable
-fun DashboardScreen(viewModel: DashboardViewModel) {
+fun DashboardScreen(viewModel: DashboardViewModel, onNavigateToSchedule: () -> Unit = {}) {
     val user by viewModel.user.collectAsState()
     val todaySchedules by viewModel.todaySchedules.collectAsState()
     val allMenus by viewModel.allMenus.collectAsState()
     val weeklyRate by viewModel.weeklyCompletionRate.collectAsState()
     val monthlyCalories by viewModel.monthlyCalories.collectAsState()
     val todayProtein by viewModel.todayProtein.collectAsState()
+
+    val completedCount = todaySchedules.count { it.isCompleted }
+    val totalCount = todaySchedules.size
 
     LaunchedEffect(Unit) { viewModel.loadStats() }
 
@@ -83,14 +89,60 @@ fun DashboardScreen(viewModel: DashboardViewModel) {
             )
         }
 
-        // Today's Schedule
+        // Today's Schedule - prominent section
         item {
             Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "📋 今日の予定",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "📋 今日のメニュー",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                FilledTonalButton(onClick = onNavigateToSchedule) {
+                    Icon(Icons.Filled.CalendarMonth, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("スケジュール管理")
+                }
+            }
+        }
+
+        // Progress for today
+        if (totalCount > 0) {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (completedCount == totalCount)
+                            MaterialTheme.colorScheme.primaryContainer
+                        else
+                            MaterialTheme.colorScheme.secondaryContainer
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = if (completedCount == totalCount) "🎉 今日のメニュー完了！" else "今日の進捗",
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text("$completedCount / $totalCount 完了", fontWeight = FontWeight.Bold)
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        LinearProgressIndicator(
+                            progress = { completedCount.toFloat() / totalCount.coerceAtLeast(1) },
+                            modifier = Modifier.fillMaxWidth().height(8.dp),
+                            color = MaterialTheme.colorScheme.primary,
+                            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                        )
+                    }
+                }
+            }
         }
 
         if (todaySchedules.isEmpty()) {
@@ -101,18 +153,27 @@ fun DashboardScreen(viewModel: DashboardViewModel) {
                         containerColor = MaterialTheme.colorScheme.surfaceVariant
                     )
                 ) {
-                    Text(
-                        text = "今日の予定はありません",
-                        modifier = Modifier.padding(16.dp),
-                        style = MaterialTheme.typography.bodyLarge
-                    )
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Text(
+                            text = "今日の予定はまだ設定されていません",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedButton(onClick = onNavigateToSchedule) {
+                            Text("スケジュールを設定する")
+                        }
+                    }
                 }
             }
         } else {
             items(todaySchedules) { schedule ->
-                val menuName = allMenus.find { it.id == schedule.menuId }?.name ?: "不明"
+                val menu = allMenus.find { it.id == schedule.menuId }
+                val menuName = menu?.name ?: "不明"
+                val detail = menu?.let { "${it.defaultReps}回×${it.defaultSets}セット | ${it.calorieEstimate}kcal" } ?: ""
                 ScheduleItem(
                     menuName = menuName,
+                    detail = detail,
+                    category = menu?.category ?: "",
                     isCompleted = schedule.isCompleted,
                     onToggle = { viewModel.toggleScheduleComplete(schedule.id, !schedule.isCompleted) }
                 )
@@ -150,26 +211,51 @@ fun StatCard(title: String, value: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun ScheduleItem(menuName: String, isCompleted: Boolean, onToggle: () -> Unit) {
+fun ScheduleItem(
+    menuName: String,
+    detail: String,
+    category: String,
+    isCompleted: Boolean,
+    onToggle: () -> Unit
+) {
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isCompleted)
+                MaterialTheme.colorScheme.surfaceVariant
+            else
+                MaterialTheme.colorScheme.surface
+        )
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = menuName,
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.weight(1f)
-            )
             Checkbox(
                 checked = isCompleted,
                 onCheckedChange = { onToggle() }
             )
+            Spacer(modifier = Modifier.width(8.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = menuName,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold,
+                    textDecoration = if (isCompleted) TextDecoration.LineThrough else TextDecoration.None
+                )
+                if (detail.isNotBlank()) {
+                    Text(
+                        text = "$category | $detail",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            if (isCompleted) {
+                Text("✅", style = MaterialTheme.typography.titleMedium)
+            }
         }
     }
 }

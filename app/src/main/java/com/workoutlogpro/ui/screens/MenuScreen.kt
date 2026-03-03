@@ -350,7 +350,7 @@ fun TemplateDialog(viewModel: MenuViewModel, onDismiss: () -> Unit) {
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("すべて選択", fontWeight = FontWeight.Bold)
                     }
-                    HorizontalDivider()
+                    Divider()
                 }
 
                 categories.forEach { category ->

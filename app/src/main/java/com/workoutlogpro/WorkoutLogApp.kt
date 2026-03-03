@@ -16,7 +16,8 @@ class WorkoutLogApp : Application() {
             logDao = database.workoutLogDao(),
             scheduleDao = database.workoutScheduleDao(),
             proteinLogDao = database.proteinLogDao(),
-            userDao = database.userDao()
+            userDao = database.userDao(),
+            reminderSettingDao = database.reminderSettingDao()
         )
     }
 

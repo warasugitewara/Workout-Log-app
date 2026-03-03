@@ -213,7 +213,7 @@ fun CompletionRateBar(label: String, rate: Float) {
         }
         Spacer(modifier = Modifier.height(4.dp))
         LinearProgressIndicator(
-            progress = { (rate / 100f).coerceIn(0f, 1f) },
+            progress = (rate / 100f).coerceIn(0f, 1f),
             modifier = Modifier.fillMaxWidth().height(10.dp),
             color = when {
                 rate >= 80f -> MaterialTheme.colorScheme.primary

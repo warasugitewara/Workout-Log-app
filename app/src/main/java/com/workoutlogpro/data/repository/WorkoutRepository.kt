@@ -9,7 +9,8 @@ class WorkoutRepository(
     private val logDao: WorkoutLogDao,
     private val scheduleDao: WorkoutScheduleDao,
     private val proteinLogDao: ProteinLogDao,
-    private val userDao: UserDao
+    private val userDao: UserDao,
+    private val reminderSettingDao: ReminderSettingDao
 ) {
     // --- User ---
     fun getUser(): Flow<User?> = userDao.getUser()
@@ -44,4 +45,13 @@ class WorkoutRepository(
     suspend fun totalProteinForPeriod(start: Long, end: Long): Float = proteinLogDao.totalForPeriod(start, end) ?: 0f
     suspend fun saveProteinLog(log: ProteinLog): Long = proteinLogDao.upsert(log)
     suspend fun deleteProteinLog(log: ProteinLog) = proteinLogDao.delete(log)
+
+    // --- Reminder ---
+    fun getAllReminders(): Flow<List<ReminderSetting>> = reminderSettingDao.getAll()
+    suspend fun getReminderByDay(dayOfWeek: Int): ReminderSetting? = reminderSettingDao.getByDay(dayOfWeek)
+    suspend fun saveReminder(setting: ReminderSetting) = reminderSettingDao.upsert(setting)
+    suspend fun deleteReminderByDay(dayOfWeek: Int) = reminderSettingDao.deleteByDay(dayOfWeek)
+
+    // --- Schedule helpers ---
+    suspend fun deleteSchedulesByDay(dayOfWeek: Int) = scheduleDao.deleteByDay(dayOfWeek)
 }
