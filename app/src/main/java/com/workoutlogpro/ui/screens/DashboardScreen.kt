@@ -114,12 +114,22 @@ fun DashboardScreen(viewModel: DashboardViewModel, onNavigateToSchedule: () -> U
         if (totalCount > 0) {
             item {
                 val todayEstCalories = todaySchedules.sumOf { schedule ->
-                    allMenus.find { it.id == schedule.menuId }?.calorieEstimate?.toDouble() ?: 0.0
+                    val menu = allMenus.find { it.id == schedule.menuId }
+                    if (menu != null && schedule.setNumber > 0) {
+                        (menu.calorieEstimate / menu.defaultSets.coerceAtLeast(1)).toDouble()
+                    } else {
+                        menu?.calorieEstimate?.toDouble() ?: 0.0
+                    }
                 }
                 val todayDoneCalories = todaySchedules
                     .filter { it.isCompleted }
                     .sumOf { schedule ->
-                        allMenus.find { it.id == schedule.menuId }?.calorieEstimate?.toDouble() ?: 0.0
+                        val menu = allMenus.find { it.id == schedule.menuId }
+                        if (menu != null && schedule.setNumber > 0) {
+                            (menu.calorieEstimate / menu.defaultSets.coerceAtLeast(1)).toDouble()
+                        } else {
+                            menu?.calorieEstimate?.toDouble() ?: 0.0
+                        }
                     }
 
                 Card(
