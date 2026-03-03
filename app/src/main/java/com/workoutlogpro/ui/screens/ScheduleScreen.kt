@@ -20,6 +20,7 @@ import java.util.Calendar
 
 private val DAY_NAMES = listOf("月", "火", "水", "木", "金", "土", "日")
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScheduleScreen(viewModel: ScheduleViewModel, onBack: () -> Unit) {
     val allSchedules by viewModel.allSchedules.collectAsState()

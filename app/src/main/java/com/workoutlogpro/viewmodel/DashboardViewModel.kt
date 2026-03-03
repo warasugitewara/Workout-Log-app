@@ -95,6 +95,24 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     fun toggleScheduleComplete(id: Int, completed: Boolean) {
         viewModelScope.launch {
             repo.setScheduleCompleted(id, completed)
+            // 完了時に自動でトレーニングログを作成
+            if (completed) {
+                val schedule = todaySchedules.value.find { it.id == id } ?: return@launch
+                val menu = allMenus.value.find { it.id == schedule.menuId } ?: return@launch
+                repo.saveLog(
+                    WorkoutLog(
+                        date = System.currentTimeMillis(),
+                        menuId = menu.id,
+                        actualReps = menu.defaultReps,
+                        actualSets = menu.defaultSets,
+                        durationSec = menu.avgTimeSec * menu.defaultSets,
+                        actualCalories = menu.calorieEstimate,
+                        weight = user.value?.weight ?: 0f,
+                        fatigueLevel = 3
+                    )
+                )
+                loadStats() // 統計を再読み込み
+            }
         }
     }
 }
