@@ -42,6 +42,7 @@ fun ScheduleScreen(viewModel: ScheduleViewModel, onBack: () -> Unit) {
     if (showRoutineDialog) {
         RoutineSelectDialog(
             routines = viewModel.routineTemplates,
+            allMenus = allMenus,
             onSelect = { routine ->
                 viewModel.applyRoutineToDay(selectedDay, routine.menuNames)
                 showRoutineDialog = false
@@ -267,6 +268,7 @@ fun ScheduleScreen(viewModel: ScheduleViewModel, onBack: () -> Unit) {
 @Composable
 fun RoutineSelectDialog(
     routines: List<RoutineTemplate>,
+    allMenus: List<com.workoutlogpro.data.entity.WorkoutMenu>,
     onSelect: (RoutineTemplate) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -279,6 +281,9 @@ fun RoutineSelectDialog(
                 modifier = Modifier.heightIn(max = 400.dp)
             ) {
                 items(routines) { routine ->
+                    val estCalories = routine.menuNames.sumOf { name ->
+                        allMenus.find { it.name == name }?.calorieEstimate?.toDouble() ?: 0.0
+                    }
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -286,7 +291,24 @@ fun RoutineSelectDialog(
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
-                            Text(routine.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(routine.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge)
+                                Surface(
+                                    color = MaterialTheme.colorScheme.primaryContainer,
+                                    shape = MaterialTheme.shapes.small
+                                ) {
+                                    Text(
+                                        "🔥 %.0f kcal".format(estCalories),
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
                             Text(routine.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(

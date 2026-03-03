@@ -113,6 +113,15 @@ fun DashboardScreen(viewModel: DashboardViewModel, onNavigateToSchedule: () -> U
         // Progress for today
         if (totalCount > 0) {
             item {
+                val todayEstCalories = todaySchedules.sumOf { schedule ->
+                    allMenus.find { it.id == schedule.menuId }?.calorieEstimate?.toDouble() ?: 0.0
+                }
+                val todayDoneCalories = todaySchedules
+                    .filter { it.isCompleted }
+                    .sumOf { schedule ->
+                        allMenus.find { it.id == schedule.menuId }?.calorieEstimate?.toDouble() ?: 0.0
+                    }
+
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
@@ -133,9 +142,15 @@ fun DashboardScreen(viewModel: DashboardViewModel, onNavigateToSchedule: () -> U
                             )
                             Text("$completedCount / $totalCount 完了", fontWeight = FontWeight.Bold)
                         }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "🔥 %.0f / %.0f kcal 消費".format(todayDoneCalories, todayEstCalories),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
                         Spacer(modifier = Modifier.height(8.dp))
                         LinearProgressIndicator(
-                            progress = completedCount.toFloat() / totalCount.coerceAtLeast(1),
+                            progress = { completedCount.toFloat() / totalCount.coerceAtLeast(1) },
                             modifier = Modifier.fillMaxWidth().height(8.dp),
                             color = MaterialTheme.colorScheme.primary,
                             trackColor = MaterialTheme.colorScheme.surfaceVariant,
