@@ -151,6 +151,7 @@ fun MenuCard(menu: WorkoutMenu, onEdit: () -> Unit, onDelete: () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MenuEditDialog(menu: WorkoutMenu, onSave: (WorkoutMenu) -> Unit, onDismiss: () -> Unit) {
     var name by remember { mutableStateOf(menu.name) }
